@@ -16,7 +16,8 @@ class Range {
 
 
 class Selection {
-  constructor(scroll, emitter) {
+  constructor(scroll, emitter, quill) {
+    this.quill = quill;
     this.emitter = emitter;
     this.scroll = scroll;
     this.composing = false;
@@ -243,6 +244,14 @@ class Selection {
     return args;
   }
 
+  getScrollDistanceAwayFromBottom() {
+    const { options } = this.quill;
+    if (!options || typeof options !== 'object') return 0;
+    const { scrollDistanceAwayFromBottom: offset } = options;
+    if (typeof offset == 'function') return offset();
+    return offset;
+  }
+
   scrollIntoView(scrollingContainer) {
     let range = this.lastRange;
     if (range == null) return;
@@ -256,10 +265,12 @@ class Selection {
     }
     if (first == null || last == null) return;
     let scrollBounds = scrollingContainer.getBoundingClientRect();
+    let scrollBottomOffset = this.getScrollDistanceAwayFromBottom();
+    let scrollTop = scrollingContainer.scrollTop;
     if (bounds.top < scrollBounds.top) {
-      scrollingContainer.scrollTop -= (scrollBounds.top - bounds.top);
-    } else if (bounds.bottom > scrollBounds.bottom) {
-      scrollingContainer.scrollTop += (bounds.bottom - scrollBounds.bottom);
+      scrollingContainer.scrollTop = scrollTop - (scrollBounds.top - bounds.top);
+    } else if (bounds.bottom > scrollBounds.bottom - scrollBottomOffset) {
+      scrollingContainer.scrollTop = scrollTop + (bounds.bottom - scrollBounds.bottom) + scrollBottomOffset;
     }
   }
 
